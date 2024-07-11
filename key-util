@@ -1,0 +1,77 @@
+#!/bin/bash
+#
+# key-util - Send, generate and remove keys for Ansible 
+#        Use keys to handle prerequsit key related activity. 
+#
+usage()
+{
+	echo "Usage: $0 [ -[g|s|r|h] HOST ]"
+        echo ""
+	echo "-a - Generate keys, send keys and test login."
+	echo "-g - generate keys on ansible target"
+	echo "-t - test connection"
+	echo "-s - sent keys to ansible target"
+	echo "-r - remove HOST key from known_hosts on ansible host"
+	echo "-h - help (this info)."
+	exit
+}
+
+exit_failure()
+{
+	usage
+	exit 1
+}
+gen_key()
+{
+	ssh ${USER}@$1 ssh-keygen
+}
+send_key()
+{
+	ssh-copy-id -i ${HOME}/.ssh/id_rsa.pub $1
+}
+remove_key()
+{
+	ssh-keygen -R $1 -f ${HOME}/.ssh/known_hosts
+}
+test_connection()
+{
+	ssh ${USER}@$1
+}
+if [ "$#" -le 1 ]
+then
+	usage
+fi
+while getopts "a:t:g:s:r:h" options; do
+    case "${options}" in
+        a)
+	    HOST=${OPTARG}
+	    gen_key $HOST
+	    send_key $HOST
+	    test_connection $HOST
+	    ;;
+	g) 
+	    HOST=${OPTARG}
+	    gen_key $HOST
+	    ;;
+	    
+	t)
+	    HOST=${OPTARG}
+	    test_connection $HOST
+	    ;;
+	s)
+	    HOST=${OPTARG}
+	    send_key $HOST	
+	    ;;
+	r)
+	    HOST=${OPTARG}
+	    remove_key $HOST
+	    ;;
+        h)
+	    usage
+	    ;;
+	*)
+	    exit_failure
+	    ;;
+    esac
+done
+	    
